@@ -8,7 +8,7 @@
    extern char *yytext;
    FILE *mipsFile;
    int isInt;
-   
+   int iniExp;  
 %}
 
 
@@ -37,6 +37,7 @@ MainClass:
             fprintf(mipsFile,".data\n");
             fprintf(mipsFile,"   .text\n");
             fprintf(mipsFile,"   .global main\n");
+            iniExp = 0;
          }
          IDENTIFIER LLBR PUBLIC STATIC VOID 
          MAIN {
@@ -103,8 +104,9 @@ Type: INT LMBR RMBR
 
 IDENTIFIERX: LMBR Expression RMBR EQ Expression SEMI
            | EQ Expression SEMI {
-               fprintf(mipsFile,"   li $t0,%d\n",$2);
-               fprintf(mipsFile,"   sw $t0,0($sp)\n",$2);
+               fprintf(mipsFile,"   move $t0,t1\n");
+               fprintf(mipsFile,"   sw $t0,0($sp)\n");
+               iniExp = 0;
              }
            ;
 
@@ -125,10 +127,25 @@ Statement: LLBR Statements RLBR
          | IDENTIFIER IDENTIFIERX
          ;
 
-Operator: AND Expression
+Operator: ADD Expression {
+            if(isInt==0){
+               fprintf(mipsFile, "   lw $t2,0($sp)\n");
+               fprintf(mipsFile, "   add $t1,$t2\n");
+            }else{
+               fprintf(mipsFile, "   addi $t1,%d\n",$2);
+            }
+          }
         | LESS Expression
-        | ADD Expression
-        | MINUS Expression
+        | AND Expression
+        | MINUS Expression{
+            if(isInt==0){
+               fprintf(mipsFile, "   lw $t2,0($sp)\n");
+               fprintf(mipsFile, "   sub $t1,$t2\n");
+            }else{
+               fprintf(mipsFile, "   li $t2,%d\n",$2);
+               fprintf(mipsFile, "   sub $t1,$t2\n");
+            }
+          }
         | STAR Expression
         ;
 
@@ -143,7 +160,17 @@ Expression0: Expression1 Expression0
 Expression1: COMMA Expression
            ;
 
-Expression: Expression Operator 
+Expression: Expression {
+               if(iniExp==0){
+                  if(isInt==0){
+                     fprintf(mipsFile, "   lw $t1,0($sp)\n");
+                  }else{
+                     fprintf(mipsFile, "   li $t1,%d\n",$1);
+                  }
+                  iniExp=1;
+               }
+            } 
+            Operator 
           | Expression LMBR Expression RMBR
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
