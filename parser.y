@@ -2,6 +2,7 @@
    // C declaration
    #include <stdio.h>
    #include <stdlib.h>
+   #include <string.h>
    extern int linenum;
    extern FILE *yyin;
    extern char *yytext;
@@ -48,7 +49,11 @@ ClassDecs: ClassDec ClassDecs
          |
          ;
 
-ClassDec: CLASS IDENTIFIER ExtendId LLBR VarDecs MethodDecs RLBR
+ClassDec: 
+        CLASS {
+           fprintf(mipsFile,"CS_test:\n");
+        }
+        IDENTIFIER ExtendId LLBR VarDecs MethodDecs RLBR
         ;
 
 ExtendId: EXTENDS IDENTIFIER
@@ -98,7 +103,13 @@ IDENTIFIERX: LMBR Expression RMBR EQ Expression SEMI
 Statement: LLBR Statements RLBR
          | IF LSBR Expression RSBR Statement ELSE Statement
          | WHILE LSBR Expression RSBR Statement
-         | SYSPRINT LSBR Expression RSBR SEMI
+         | SYSPRINT {
+             fprintf(mipsFile,"   li $a0,222\n");
+             fprintf(mipsFile,"   li $v0,1\n");
+             fprintf(mipsFile,"   syscall\n");
+             fprintf(mipsFile,"   jr $ra\n");
+           }
+           LSBR Expression RSBR SEMI
          | IDENTIFIER IDENTIFIERX
          ;
 
