@@ -9,18 +9,20 @@
    FILE *mipsFile;
 %}
 
+%union {
+   int intVal;
+   char* text;
+}
+
 %left CLASS EXTENDS PUBLIC STATIC VOID MAIN LENGTH
 %left LLBR RLBR LMBR RMBR LSBR RSBR COMMA SEMI PERIOD
-%left STRING INT BOOLEAN INT_LIT NEW EXCLA IDENTIFIER
+%left STRING INT BOOLEAN NEW EXCLA IDENTIFIER
 %left IF ELSE WHILE TRUE FALSE THIS RETURN SYSPRINT
 %left EQ AND LESS ADD MINUS STAR
 
-%union {
-   int ivalue;
-   char* text;
-   double dbvalue;
-}
+%token<intVal> INT_LIT
 
+%start Goal
 %%
 
 Goal: MainClass ClassDecs
@@ -135,7 +137,9 @@ Expression: Expression Operator Expression
           | Expression LMBR Expression RMBR
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
-          | INT_LIT
+          | INT_LIT {
+               printf("int: %d\n",$1);
+            }
           | TRUE
           | FALSE
           | IDENTIFIER
