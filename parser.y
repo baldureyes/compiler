@@ -29,8 +29,8 @@ MainClass:
          CLASS {
             mipsFile = fopen("myMipsFileOutput","w");
             fprintf(mipsFile,".data\n");
-            fprintf(mipsFile,".text\n");
-            fprintf(mipsFile,".global main\n");
+            fprintf(mipsFile,"   .text\n");
+            fprintf(mipsFile,"   .global main\n");
          }
          IDENTIFIER LLBR PUBLIC STATIC VOID 
          MAIN {
@@ -38,8 +38,8 @@ MainClass:
          } 
          LSBR STRING LMBR RMBR IDENTIFIER RSBR LLBR Statement RLBR 
          RLBR {
-            fprintf(mipsFile,".data\n");
-            fprintf(mipsFile,".text\n");
+            fprintf(mipsFile,"   .data\n");
+            fprintf(mipsFile,"   .text\n");
          }
          ;
 
