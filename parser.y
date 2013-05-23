@@ -7,7 +7,10 @@
    extern FILE *yyin;
    extern char *yytext;
    FILE *mipsFile;
+   int isInt;
+   
 %}
+
 
 %union {
    int intVal;
@@ -21,7 +24,7 @@
 %left EQ AND LESS ADD MINUS STAR
 
 %token<intVal> INT_LIT
-
+%type<intVal>  Expression
 %start Goal
 %%
 
@@ -99,19 +102,26 @@ Type: INT LMBR RMBR
     ;
 
 IDENTIFIERX: LMBR Expression RMBR EQ Expression SEMI
-           | EQ Expression SEMI
+           | EQ Expression SEMI {
+               fprintf(mipsFile,"   li $t0,%d\n",$2);
+               fprintf(mipsFile,"   sw $t0,0($sp)\n",$2);
+             }
            ;
 
 Statement: LLBR Statements RLBR
          | IF LSBR Expression RSBR Statement ELSE Statement
          | WHILE LSBR Expression RSBR Statement
-         | SYSPRINT {
-             fprintf(mipsFile,"   li $a0,222\n");
+         | SYSPRINT LSBR Expression RSBR SEMI {
+             if(isInt == 1 ){
+               fprintf(mipsFile,"   li $a0,%d\n",$3);
+             }else{
+               fprintf(mipsFile,"   lw $a0,0($sp)\n");
+             }
              fprintf(mipsFile,"   li $v0,1\n");
              fprintf(mipsFile,"   syscall\n");
              fprintf(mipsFile,"   jr $ra\n");
            }
-           LSBR Expression RSBR SEMI
+
          | IDENTIFIER IDENTIFIERX
          ;
 
@@ -138,11 +148,14 @@ Expression: Expression Operator Expression
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
           | INT_LIT {
-               printf("int: %d\n",$1);
+               $$ = $1;
+               isInt = 1;
             }
           | TRUE
           | FALSE
-          | IDENTIFIER
+          | IDENTIFIER {
+               isInt = 0;
+            }
           | THIS
           | NEW INT LMBR Expression RMBR
           | NEW IDENTIFIER LSBR RSBR
