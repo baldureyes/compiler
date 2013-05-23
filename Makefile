@@ -8,3 +8,4 @@ clean:
 	rm -f parser.output
 	rm -f parser
 	rm -f lex.yy.c
+	rm -f myMipsFileOutput

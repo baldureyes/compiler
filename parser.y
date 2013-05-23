@@ -5,6 +5,7 @@
    extern int linenum;
    extern FILE *yyin;
    extern char *yytext;
+   FILE *mipsFile;
 %}
 
 %left CLASS EXTENDS PUBLIC STATIC VOID MAIN LENGTH
@@ -24,7 +25,22 @@
 Goal: MainClass ClassDecs
     ;
 
-MainClass: CLASS IDENTIFIER LLBR PUBLIC STATIC VOID MAIN LSBR STRING LMBR RMBR IDENTIFIER RSBR LLBR Statement RLBR RLBR
+MainClass: 
+         CLASS {
+            mipsFile = fopen("myMipsFileOutput","w");
+            fprintf(mipsFile,".data\n");
+            fprintf(mipsFile,".text\n");
+            fprintf(mipsFile,".global main\n");
+         }
+         IDENTIFIER LLBR PUBLIC STATIC VOID 
+         MAIN {
+            fprintf(mipsFile,"main:\n");
+         } 
+         LSBR STRING LMBR RMBR IDENTIFIER RSBR LLBR Statement RLBR 
+         RLBR {
+            fprintf(mipsFile,".data\n");
+            fprintf(mipsFile,".text\n");
+         }
          ;
 
 ClassDecs: ClassDec ClassDecs
