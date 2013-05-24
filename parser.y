@@ -137,9 +137,7 @@ Expression: Expression Operator
           | Expression LMBR Expression RMBR
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
-          | INT_LIT {
-               printf("int: %d\n",$1);
-            }
+          | INT_LIT 
           | TRUE
           | FALSE
           | IDENTIFIER
