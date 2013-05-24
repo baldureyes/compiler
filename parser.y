@@ -115,11 +115,11 @@ Statement: LLBR Statements RLBR
          | IDENTIFIER IDENTIFIERX
          ;
 
-Operator: AND
-        | LESS
-        | ADD
-        | MINUS
-        | STAR
+Operator: AND Expression
+        | LESS Expression
+        | ADD Expression
+        | MINUS Expression
+        | STAR Expression
         ;
 
 Expressions: Expression Expression0
@@ -133,7 +133,7 @@ Expression0: Expression1 Expression0
 Expression1: COMMA Expression
            ;
 
-Expression: Expression Operator Expression
+Expression: Expression Operator
           | Expression LMBR Expression RMBR
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
