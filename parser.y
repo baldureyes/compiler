@@ -45,6 +45,8 @@ MainClass:
             fprintf(mipsFile,"   .text\n");
             fprintf(mipsFile,"   .global main\n");
             iniExp = 0;
+            retExpAttr = (struct expAttr*) malloc(sizeof(struct expAttr));
+            retPtype = (struct ptypeAttr*) malloc(sizeof(struct ptypeAttr));
          }
          IDENTIFIER LLBR PUBLIC STATIC VOID 
          MAIN {
@@ -78,7 +80,6 @@ VarDecs: VarDecs VarDec
        ;
 
 VarDec: Type IDENTIFIER {
-      /*
            myTable[tableDep].expType = $1->type;
            strcpy(myTable[tableDep].name, $2);
            myTable[tableDep].contain = tableDep*4;
@@ -86,7 +87,6 @@ VarDec: Type IDENTIFIER {
            fprintf(mipsFile,"   li $t0,0\n");
            fprintf(mipsFile,"   sw $t0,%d($sp)\n",tableDep*4);
            tableDep++;
-           */
         }
         SEMI
       ;
@@ -117,25 +117,19 @@ MethodDec: PUBLIC Type IDENTIFIER LSBR TypeIds RSBR LLBR VarDecs Statements RETU
 Type: INT LMBR RMBR
     | BOOLEAN
     | INT { 
-    /*
          retPtype->type = const_t;
          $$ = retPtype;
-         */
       }
     | IDENTIFIER {
-    /*
          retPtype->type = param_t;
          $$ = retPtype;
-         */
       }
     ;
 
 IdentifierAssign: LMBR Expression RMBR EQ Expression SEMI
                 | EQ Expression SEMI {
-                /*
                     $$=$2;
                     iniExp = 0;
-                    */
                   }
                 ;
 
@@ -143,21 +137,19 @@ Statement: LLBR Statements RLBR
          | IF LSBR Expression RSBR Statement ELSE Statement
          | WHILE LSBR Expression RSBR Statement
          | SYSPRINT LSBR Expression RSBR SEMI {
-         /*
              // get expression
+             int tmp = $3->contain;
              if($3->expType == const_t ){
-               fprintf(mipsFile,"   li $a0,%d\n",$3->contain);
+               fprintf(mipsFile,"   li $a0,%d\n",tmp);
              }else{
-               fprintf(mipsFile,"   lw $a0,%d($sp)\n",$3->contain*4);
+               fprintf(mipsFile,"   lw $a0,%d($sp)\n",tmp);
              }
              // print
              fprintf(mipsFile,"   li $v0,1\n");
              fprintf(mipsFile,"   syscall\n");
-             */
            }
 
          | IDENTIFIER IdentifierAssign {
-         /*
               idLoc = searchParam ($1);
               if(idLoc == -1) {
                  printf("exp use undefined id: %s\n", $1);
@@ -172,7 +164,6 @@ Statement: LLBR Statements RLBR
                     fprintf(mipsFile,"   sw $t0,%d($sp)\n",$2->contain);
                  }
               }
-              */
            }
          ;
 
@@ -214,7 +205,6 @@ Expression1: COMMA Expression
            ;
 
 Expression: Expression {
-          /*
                if(iniExp==0){
                   if($1->expType == param_t){
                      fprintf(mipsFile, "   lw $t1,%d($sp)\n",$1->contain);
@@ -223,23 +213,19 @@ Expression: Expression {
                   }
                   iniExp=1;
                }
-               */
             } 
             Operator 
           | Expression LMBR Expression RMBR
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
           | INT_LIT {
-          /*
                retExpAttr->expType = const_t;
                retExpAttr->contain = $1;
                $$ = retExpAttr;
-               */
             }
           | TRUE
           | FALSE
           | IDENTIFIER {
-          /*
                idLoc = searchParam ($1);
                if(idLoc != -1) {
                   strcpy(retExpAttr->name,myTable[idLoc].name);
@@ -249,7 +235,6 @@ Expression: Expression {
                }else {
                   printf("exp use undefined id: %s\n", $1);
                }
-               */
             }
           | THIS
           | NEW INT LMBR Expression RMBR
