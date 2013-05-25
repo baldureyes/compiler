@@ -53,7 +53,7 @@ identifier ({letter})({letter}|{digit})*
 "-"         { return MINUS; }
 "*"         { return STAR; }
 {integer}   { yylval.intVal = atoi(yytext); return INT_LIT; }
-{identifier} { return IDENTIFIER; }
+{identifier} { yylval.text = yytext; return IDENTIFIER; }
 "System.out.println" { return SYSPRINT; }
 
 
