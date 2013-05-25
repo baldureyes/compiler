@@ -15,8 +15,8 @@ struct ptypeAttr {
 
 // return param table location
 int searchParam ( char* name ) {
-   int i = tableDep;
-   for (i = 0; i < tableDep; i++) {
+   int i;
+   for (i = 0; i <= tableDep; i++) {
       if (!strcmp(name,myTable[i].name)) {
          return i;
       }

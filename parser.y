@@ -54,6 +54,8 @@ MainClass:
          } 
          LSBR STRING LMBR RMBR IDENTIFIER RSBR LLBR Statement RLBR 
          RLBR {
+            fprintf(mipsFile,"   # exit program\n");
+            fprintf(mipsFile,"   jr $ra\n\n");
             fprintf(mipsFile,"   .data\n");
             fprintf(mipsFile,"   .text\n");
          }
@@ -66,7 +68,7 @@ ClassDecs: ClassDec ClassDecs
 
 ClassDec: 
         CLASS {
-           //fprintf(mipsFile,"CS_test:\n");
+           fprintf(mipsFile,"CS_test:\n");
         }
         IDENTIFIER ExtendId LLBR VarDecs MethodDecs RLBR
         ;
@@ -83,7 +85,7 @@ VarDec: Type IDENTIFIER {
            myTable[tableDep].expType = $1->type;
            strcpy(myTable[tableDep].name, $2);
            myTable[tableDep].contain = tableDep*4;
-           fprintf(mipsFile,"   # init param dec\n");
+           fprintf(mipsFile,"   # dec param \"%s\" at stack loc %d \n",$2,tableDep*4);
            fprintf(mipsFile,"   li $t0,0\n");
            fprintf(mipsFile,"   sw $t0,%d($sp)\n",tableDep*4);
            tableDep++;
@@ -137,12 +139,15 @@ Statement: LLBR Statements RLBR
          | IF LSBR Expression RSBR Statement ELSE Statement
          | WHILE LSBR Expression RSBR Statement
          | SYSPRINT LSBR Expression RSBR SEMI {
-             // get expression
              int tmp = $3->contain;
+             // get expression
              if($3->expType == const_t ){
-               fprintf(mipsFile,"   li $a0,%d\n",tmp);
+               fprintf(mipsFile,"   # print\n");
+               fprintf(mipsFile,"   move $a0,$t0\n");
              }else{
-               fprintf(mipsFile,"   lw $a0,%d($sp)\n",tmp);
+               idLoc = searchParam($3->name);
+               fprintf(mipsFile,"   # print param \"%s\"\n",myTable[idLoc].name);
+               fprintf(mipsFile,"   lw $a0,%d($sp)\n",myTable[idLoc].contain);
              }
              // print
              fprintf(mipsFile,"   li $v0,1\n");
@@ -150,45 +155,44 @@ Statement: LLBR Statements RLBR
            }
 
          | IDENTIFIER IdentifierAssign {
-              idLoc = searchParam ($1);
+              idLoc = searchParam($1);
               if(idLoc == -1) {
                  printf("exp use undefined id: %s\n", $1);
               }else {
                  if($2->expType == const_t){
+                    fprintf(mipsFile,"   # assign %d to \"%s\"\n",$2->contain,$1);
                     fprintf(mipsFile,"   li $t0,%d\n",$2->contain);
-                    fprintf(mipsFile,"   sw $t0,%d($sp)\n",$2->contain);
+                    fprintf(mipsFile,"   sw $t0,%d($sp)\n",myTable[idLoc].contain);
                  }else{
                     idLoc = searchParam ($2->name);
                     if(idLoc == -1) printf("exp use undefined id: %s\n", $2->name);
+                    fprintf(mipsFile,"   # assign %s to \"%s\"\n",myTable[idLoc].name,$1);
                     fprintf(mipsFile,"   lw $t0,%d($sp)\n",myTable[idLoc].contain);
-                    fprintf(mipsFile,"   sw $t0,%d($sp)\n",$2->contain);
+                    idLoc = searchParam($1);
+                    fprintf(mipsFile,"   sw $t0,%d($sp)\n",myTable[idLoc].contain);
                  }
               }
            }
          ;
 
 Operator: ADD Expression {
-            /*
-            if(isInt==0){
+            if( $2->expType == param_t){
                fprintf(mipsFile, "   lw $t2,0($sp)\n");
-               fprintf(mipsFile, "   add $t1,$t2\n");
+               fprintf(mipsFile, "   add $t0,$t2\n");
             }else{
-               fprintf(mipsFile, "   addi $t1,%d\n",$2);
+               fprintf(mipsFile, "   addi $t0,%d\n",$2->contain);
             }
-            */
           }
         | LESS Expression
         | AND Expression
         | MINUS Expression{
-            /*
-            if(isInt==0){
+            if($2->expType == param_t){
                fprintf(mipsFile, "   lw $t2,0($sp)\n");
-               fprintf(mipsFile, "   sub $t1,$t2\n");
+               fprintf(mipsFile, "   sub $t0,$t2\n");
             }else{
-               fprintf(mipsFile, "   li $t2,%d\n",$2);
-               fprintf(mipsFile, "   sub $t1,$t2\n");
+               fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
+               fprintf(mipsFile, "   sub $t0,$t2\n");
             }
-            */
           }
         | STAR Expression
         ;
@@ -207,9 +211,9 @@ Expression1: COMMA Expression
 Expression: Expression {
                if(iniExp==0){
                   if($1->expType == param_t){
-                     fprintf(mipsFile, "   lw $t1,%d($sp)\n",$1->contain);
+                     fprintf(mipsFile, "   lw $t0,%d($sp)\n",$1->contain);
                   }else{
-                     fprintf(mipsFile, "   li $t1,%d\n",$1->contain);
+                     fprintf(mipsFile, "   li $t0,%d\n",$1->contain);
                   }
                   iniExp=1;
                }

@@ -53,7 +53,13 @@ identifier ({letter})({letter}|{digit})*
 "-"         { return MINUS; }
 "*"         { return STAR; }
 {integer}   { yylval.intVal = atoi(yytext); return INT_LIT; }
-{identifier} { yylval.text = yytext; return IDENTIFIER; }
+{identifier} { 
+               char actualID[33];
+               memset( actualID, 0, sizeof(actualID) );
+               strncpy( actualID, yytext, 32 );
+               yylval.text = strdup( actualID );
+               return IDENTIFIER; 
+             }
 "System.out.println" { return SYSPRINT; }
 
 
