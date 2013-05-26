@@ -67,10 +67,9 @@ ClassDecs: ClassDec ClassDecs
          ;
 
 ClassDec: 
-        CLASS {
-           fprintf(mipsFile,"CS_test:\n");
-        }
-        IDENTIFIER ExtendId LLBR VarDecs MethodDecs RLBR
+        CLASS IDENTIFIER {
+           fprintf(mipsFile,"%s:\n",$2);
+        } ExtendId LLBR VarDecs MethodDecs RLBR
         ;
 
 ExtendId: EXTENDS IDENTIFIER
@@ -157,7 +156,7 @@ Statement: LLBR Statements RLBR
          | IDENTIFIER IdentifierAssign {
               idLoc = searchParam($1);
               if(idLoc == -1) {
-                 printf("exp use undefined id: %s\n", $1);
+                 printf("undefined param: %s\n", $1);
               }else {
                  if($2->expType == const_t){
                     fprintf(mipsFile,"   # assign %d to \"%s\"\n",$2->contain,$1);
