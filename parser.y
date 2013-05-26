@@ -1,5 +1,6 @@
 %{
    // C declaration
+   // register: $t0: math result, $t1: condi left result, $t2: cal tmp, $t3: condi right result
    #include <stdio.h>
    #include <stdlib.h>
    #include <string.h>
@@ -10,6 +11,7 @@
    FILE *mipsFile;
    int iniExp;  
    int idLoc;
+   int condiFlag;
    struct expAttr *retExpAttr;
    struct ptypeAttr *retPtype;
 %}
@@ -45,6 +47,7 @@ MainClass:
             fprintf(mipsFile,"   .text\n");
             fprintf(mipsFile,"   .globl main\n");
             iniExp = 0;
+            condiFlag = 0;
             retExpAttr = (struct expAttr*) malloc(sizeof(struct expAttr));
             retPtype = (struct ptypeAttr*) malloc(sizeof(struct ptypeAttr));
          }
@@ -135,7 +138,22 @@ IdentifierAssign: LMBR Expression RMBR EQ Expression SEMI
                 ;
 
 Statement: LLBR Statements RLBR
-         | IF LSBR Expression RSBR Statement ELSE Statement
+         | IF LSBR Expression {
+              condiFlag = 0;
+              iniExp = 0;
+              fprintf(mipsFile,"   slt $t1,$t0,$t3\n");
+              fprintf(mipsFile,"   li $t2,0\n");
+              fprintf(mipsFile,"   beq $t1,$t2,Else\n");
+              fprintf(mipsFile,"   # start if statement\n");
+           }
+           RSBR Statement ELSE {
+              iniExp = 0;
+              fprintf(mipsFile,"   j Endif\n");
+              fprintf(mipsFile,"Else:\n");
+           }
+           Statement {
+              fprintf(mipsFile,"Endif:\n");
+           }
          | WHILE LSBR Expression RSBR Statement
          | SYSPRINT LSBR Expression RSBR SEMI {
              int tmp = $3->contain;
@@ -176,13 +194,33 @@ Statement: LLBR Statements RLBR
 
 Operator: ADD Expression {
             if( $2->expType == param_t){
-               fprintf(mipsFile, "   lw $t2,0($sp)\n");
-               fprintf(mipsFile, "   add $t0,$t2\n");
+               idLoc = searchParam($2->name);
+               if(condiFlag == 1){
+                  fprintf(mipsFile, "   lw $t2,%d($sp)\n",myTable[idLoc].contain);
+                  fprintf(mipsFile, "   add $t3,$t2\n");
+               }else{
+                  fprintf(mipsFile, "   lw $t2,%d($sp)\n",myTable[idLoc].contain);
+                  fprintf(mipsFile, "   add $t0,$t2\n");
+               }
             }else{
-               fprintf(mipsFile, "   addi $t0,%d\n",$2->contain);
+               if(condiFlag == 1){
+                  fprintf(mipsFile, "   addi $t3,%d\n",$2->contain);
+               }else{
+                  fprintf(mipsFile, "   addi $t0,%d\n",$2->contain);
+               }
             }
           }
-        | LESS Expression
+        | LESS {
+             condiFlag = 1;
+          }
+          Expression {
+            if( $3->expType == param_t){
+               idLoc = searchParam($3->name);
+               fprintf(mipsFile, "   lw $t3,%d($sp)\n",myTable[idLoc].contain);
+            }else{
+               fprintf(mipsFile, "   li $t3,%d\n",$3->contain);
+            }
+          }
         | AND Expression
         | MINUS Expression{
             if($2->expType == param_t){
@@ -210,7 +248,11 @@ Expression1: COMMA Expression
 Expression: Expression {
                if(iniExp==0){
                   if($1->expType == param_t){
-                     fprintf(mipsFile, "   lw $t0,%d($sp)\n",$1->contain);
+                     if(condiFlag == 1){
+                        fprintf(mipsFile, "   lw $t3,%d($sp)\n",$1->contain);
+                     }else{
+                        fprintf(mipsFile, "   lw $t0,%d($sp)\n",$1->contain);
+                     }
                   }else{
                      fprintf(mipsFile, "   li $t0,%d\n",$1->contain);
                   }
@@ -226,8 +268,16 @@ Expression: Expression {
                retExpAttr->contain = $1;
                $$ = retExpAttr;
             }
-          | TRUE
-          | FALSE
+          | TRUE {
+               retExpAttr->expType = const_t;
+               retExpAttr->contain = 1;
+               $$ = retExpAttr;
+            }
+          | FALSE {
+               retExpAttr->expType = const_t;
+               retExpAttr->contain = 0;
+               $$ = retExpAttr;
+            }
           | IDENTIFIER {
                idLoc = searchParam ($1);
                if(idLoc != -1) {
@@ -236,7 +286,7 @@ Expression: Expression {
                   retExpAttr->contain = myTable[idLoc].contain;
                   $$ = retExpAttr;
                }else {
-                  printf("exp use undefined id: %s\n", $1);
+                  printf("undefined id: %s\n", $1);
                }
             }
           | THIS
