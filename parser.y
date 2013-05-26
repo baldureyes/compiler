@@ -12,6 +12,7 @@
    int iniExp;  
    int idLoc;
    int condiFlag;
+   int ifNum;
    struct expAttr *retExpAttr;
    struct ptypeAttr *retPtype;
 %}
@@ -46,6 +47,7 @@ MainClass:
             fprintf(mipsFile,".data\n");
             fprintf(mipsFile,"   .text\n");
             fprintf(mipsFile,"   .globl main\n");
+            ifNum = 0;
             iniExp = 0;
             condiFlag = 0;
             retExpAttr = (struct expAttr*) malloc(sizeof(struct expAttr));
@@ -138,21 +140,25 @@ IdentifierAssign: LMBR Expression RMBR EQ Expression SEMI
                 ;
 
 Statement: LLBR Statements RLBR
-         | IF LSBR Expression {
+         | IF {
+              condiFlag = 1;
+              ifNum++;
+           }
+           LSBR Expression {
               condiFlag = 0;
               iniExp = 0;
               fprintf(mipsFile,"   slt $t1,$t0,$t3\n");
               fprintf(mipsFile,"   li $t2,0\n");
-              fprintf(mipsFile,"   beq $t1,$t2,Else\n");
-              fprintf(mipsFile,"   # start if statement\n");
+              fprintf(mipsFile,"   beq $t1,$t2,Else%d\n",ifNum);
+              fprintf(mipsFile,"   # start if_%d statement\n",ifNum);
            }
            RSBR Statement ELSE {
               iniExp = 0;
-              fprintf(mipsFile,"   j Endif\n");
-              fprintf(mipsFile,"Else:\n");
+              fprintf(mipsFile,"   j Endif%d\n",ifNum);
+              fprintf(mipsFile,"Else%d:\n",ifNum);
            }
            Statement {
-              fprintf(mipsFile,"Endif:\n");
+              fprintf(mipsFile,"Endif%d:\n",ifNum);
            }
          | WHILE LSBR Expression RSBR Statement
          | SYSPRINT LSBR Expression RSBR SEMI {
@@ -210,15 +216,12 @@ Operator: ADD Expression {
                }
             }
           }
-        | LESS {
-             condiFlag = 1;
-          }
-          Expression {
-            if( $3->expType == param_t){
-               idLoc = searchParam($3->name);
+        | LESS Expression {
+            if( $2->expType == param_t){
+               idLoc = searchParam($2->name);
                fprintf(mipsFile, "   lw $t3,%d($sp)\n",myTable[idLoc].contain);
             }else{
-               fprintf(mipsFile, "   li $t3,%d\n",$3->contain);
+               fprintf(mipsFile, "   li $t3,%d\n",$2->contain);
             }
           }
         | AND Expression
