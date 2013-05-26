@@ -226,12 +226,23 @@ Operator: ADD Expression {
           }
         | AND Expression
         | MINUS Expression{
-            if($2->expType == param_t){
-               fprintf(mipsFile, "   lw $t2,0($sp)\n");
-               fprintf(mipsFile, "   sub $t0,$t0,$t2\n");
+            if( $2->expType == param_t){
+               idLoc = searchParam($2->name);
+               if(condiFlag == 1){
+                  fprintf(mipsFile, "   lw $t2,%d($sp)\n",myTable[idLoc].contain);
+                  fprintf(mipsFile, "   sub $t3,$t3,$t2\n");
+               }else{
+                  fprintf(mipsFile, "   lw $t2,%d($sp)\n",myTable[idLoc].contain);
+                  fprintf(mipsFile, "   sub $t0,$t0,$t2\n");
+               }
             }else{
-               fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
-               fprintf(mipsFile, "   sub $t0,$t0,$t2\n");
+               if(condiFlag == 1){
+                  fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
+                  fprintf(mipsFile, "   sub $t3,$t3,$t2\n");
+               }else{
+                  fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
+                  fprintf(mipsFile, "   sub $t0,$t0,$t2\n");
+               }
             }
           }
         | STAR Expression
@@ -276,11 +287,19 @@ Expression: Expression {
                $$ = retExpAttr;
             }
           | TRUE {
+               if(iniExp==0){
+                  fprintf(mipsFile, "   li $t0,%d\n",1);
+                  iniExp=1;
+               }
                retExpAttr->expType = const_t;
                retExpAttr->contain = 1;
                $$ = retExpAttr;
             }
           | FALSE {
+               if(iniExp==0){
+                  fprintf(mipsFile, "   li $t0,%d\n",0);
+                  iniExp=1;
+               }
                retExpAttr->expType = const_t;
                retExpAttr->contain = 0;
                $$ = retExpAttr;
