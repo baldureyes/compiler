@@ -43,7 +43,7 @@ MainClass:
             mipsFile = fopen("project2.asm","w");
             fprintf(mipsFile,".data\n");
             fprintf(mipsFile,"   .text\n");
-            fprintf(mipsFile,"   .global main\n");
+            fprintf(mipsFile,"   .globl main\n");
             iniExp = 0;
             retExpAttr = (struct expAttr*) malloc(sizeof(struct expAttr));
             retPtype = (struct ptypeAttr*) malloc(sizeof(struct ptypeAttr));
