@@ -267,6 +267,10 @@ Expression: Expression {
           | Expression PERIOD LENGTH
           | Expression PERIOD IDENTIFIER LSBR Expressions RSBR
           | INT_LIT {
+               if(iniExp==0){
+                  fprintf(mipsFile, "   li $t0,%d\n",$1);
+                  iniExp=1;
+               }
                retExpAttr->expType = const_t;
                retExpAttr->contain = $1;
                $$ = retExpAttr;
