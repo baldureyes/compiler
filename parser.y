@@ -217,6 +217,7 @@ Operator: ADD Expression {
             }
           }
         | LESS Expression {
+            fprintf(mipsFile, "   # less than\n");
             if( $2->expType == param_t){
                idLoc = searchParam($2->name);
                fprintf(mipsFile, "   lw $t3,%d($sp)\n",myTable[idLoc].contain);
@@ -289,6 +290,10 @@ Expression: Expression {
           | TRUE {
                if(iniExp==0){
                   fprintf(mipsFile, "   li $t0,%d\n",1);
+                  if(condiFlag==1){
+                     fprintf(mipsFile, "   li $t3,%d\n",1);
+                     fprintf(mipsFile, "   li $t0,%d\n",0);
+                  }
                   iniExp=1;
                }
                retExpAttr->expType = const_t;
@@ -298,6 +303,10 @@ Expression: Expression {
           | FALSE {
                if(iniExp==0){
                   fprintf(mipsFile, "   li $t0,%d\n",0);
+                  if(condiFlag==1){
+                     fprintf(mipsFile, "   li $t3,%d\n",0);
+                     fprintf(mipsFile, "   li $t0,%d\n",1);
+                  }
                   iniExp=1;
                }
                retExpAttr->expType = const_t;
