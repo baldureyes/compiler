@@ -187,10 +187,10 @@ Operator: ADD Expression {
         | MINUS Expression{
             if($2->expType == param_t){
                fprintf(mipsFile, "   lw $t2,0($sp)\n");
-               fprintf(mipsFile, "   sub $t0,$t2\n");
+               fprintf(mipsFile, "   sub $t0,$t0,$t2\n");
             }else{
                fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
-               fprintf(mipsFile, "   sub $t0,$t2\n");
+               fprintf(mipsFile, "   sub $t0,$t0,$t2\n");
             }
           }
         | STAR Expression
