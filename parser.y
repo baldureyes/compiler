@@ -13,6 +13,8 @@
    int idLoc;
    int condiFlag;
    int ifNum;
+   enum{ isLess = 1, isAnd };
+   int condiContain;
    struct expAttr *retExpAttr;
    struct ptypeAttr *retPtype;
 %}
@@ -50,6 +52,7 @@ MainClass:
             ifNum = 0;
             iniExp = 0;
             condiFlag = 0;
+            condiContain = 0;
             retExpAttr = (struct expAttr*) malloc(sizeof(struct expAttr));
             retPtype = (struct ptypeAttr*) malloc(sizeof(struct ptypeAttr));
          }
@@ -141,15 +144,20 @@ IdentifierAssign: LMBR Expression RMBR EQ Expression SEMI
 
 Statement: LLBR Statements RLBR
          | IF {
-              condiFlag = 1;
               ifNum++;
            }
            LSBR Expression {
               condiFlag = 0;
               iniExp = 0;
-              fprintf(mipsFile,"   slt $t1,$t0,$t3\n");
-              fprintf(mipsFile,"   li $t2,0\n");
-              fprintf(mipsFile,"   beq $t1,$t2,Else%d\n",ifNum);
+              if(condiContain == isAnd) {
+                  fprintf(mipsFile,"   mul $t1,$t0,$t3\n");
+              }else if(condiContain == isLess ){
+                  fprintf(mipsFile,"   slt $t1,$t0,$t3\n");
+              }else{
+                  fprintf(mipsFile,"   move $t1,$t0\n");
+              }
+              // if $t1 == 0, jump to Else
+              fprintf(mipsFile,"   beqz $t1,Else%d\n",ifNum);
               fprintf(mipsFile,"   # start if_%d statement\n",ifNum);
            }
            RSBR Statement ELSE {
@@ -216,16 +224,32 @@ Operator: ADD Expression {
                }
             }
           }
-        | LESS Expression {
-            fprintf(mipsFile, "   # less than\n");
-            if( $2->expType == param_t){
-               idLoc = searchParam($2->name);
+        | LESS {
+             condiFlag = 1;
+          }  
+          Expression {
+            condiContain = isLess;
+            fprintf(mipsFile, "   # $t0 less than $t3\n");
+            if( $3->expType == param_t){
+               idLoc = searchParam($3->name);
                fprintf(mipsFile, "   lw $t3,%d($sp)\n",myTable[idLoc].contain);
             }else{
-               fprintf(mipsFile, "   li $t3,%d\n",$2->contain);
+               fprintf(mipsFile, "   li $t3,%d\n",$3->contain);
             }
           }
-        | AND Expression
+        | AND {
+             condiFlag = 1;
+          }
+          Expression {
+            condiContain = isAnd;
+            fprintf(mipsFile, "   # and\n");
+            if( $3->expType == param_t){
+               idLoc = searchParam($3->name);
+               fprintf(mipsFile, "   lw $t3,%d($sp)\n",myTable[idLoc].contain);
+            }else{
+               fprintf(mipsFile, "   li $t3,%d\n",$3->contain);
+            }
+          }
         | MINUS Expression{
             if( $2->expType == param_t){
                idLoc = searchParam($2->name);
@@ -290,10 +314,6 @@ Expression: Expression {
           | TRUE {
                if(iniExp==0){
                   fprintf(mipsFile, "   li $t0,%d\n",1);
-                  if(condiFlag==1){
-                     fprintf(mipsFile, "   li $t3,%d\n",1);
-                     fprintf(mipsFile, "   li $t0,%d\n",0);
-                  }
                   iniExp=1;
                }
                retExpAttr->expType = const_t;
@@ -303,10 +323,6 @@ Expression: Expression {
           | FALSE {
                if(iniExp==0){
                   fprintf(mipsFile, "   li $t0,%d\n",0);
-                  if(condiFlag==1){
-                     fprintf(mipsFile, "   li $t3,%d\n",0);
-                     fprintf(mipsFile, "   li $t0,%d\n",1);
-                  }
                   iniExp=1;
                }
                retExpAttr->expType = const_t;
