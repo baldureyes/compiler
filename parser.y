@@ -150,7 +150,7 @@ Statement: LLBR Statements RLBR
               condiFlag = 0;
               iniExp = 0;
               if(condiContain == isAnd) {
-                  fprintf(mipsFile,"   mul $t1,$t0,$t3\n");
+                  fprintf(mipsFile,"   and $t1,$t0,$t3\n");
               }else if(condiContain == isLess ){
                   fprintf(mipsFile,"   slt $t1,$t0,$t3\n");
               }else{
@@ -270,7 +270,26 @@ Operator: ADD Expression {
                }
             }
           }
-        | STAR Expression
+        | STAR Expression {
+            if( $2->expType == param_t){
+               idLoc = searchParam($2->name);
+               if(condiFlag == 1){
+                  fprintf(mipsFile, "   lw $t2,%d($sp)\n",myTable[idLoc].contain);
+                  fprintf(mipsFile, "   mul $t3,$t2\n");
+               }else{
+                  fprintf(mipsFile, "   lw $t2,%d($sp)\n",myTable[idLoc].contain);
+                  fprintf(mipsFile, "   mul $t0,$t0,$t2\n");
+               }
+            }else{
+               if(condiFlag == 1){
+                  fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
+                  fprintf(mipsFile, "   mul $t3,%d\n",$2->contain);
+               }else{
+                  fprintf(mipsFile, "   li $t2,%d\n",$2->contain);
+                  fprintf(mipsFile, "   mul $t0,$t0,$t2\n");
+               }
+            }
+          }
         ;
 
 Expressions: Expression Expression0
