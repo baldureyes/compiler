@@ -13,6 +13,7 @@
    int idLoc;
    int condiFlag;
    int ifNum;
+   int whileNum;
    enum{ isLess = 1, isAnd };
    int condiContain;
    struct expAttr *retExpAttr;
@@ -50,6 +51,7 @@ MainClass:
             fprintf(mipsFile,"   .text\n");
             fprintf(mipsFile,"   .globl main\n");
             ifNum = 0;
+            whileNum = 0;
             iniExp = 0;
             condiFlag = 0;
             condiContain = 0;
@@ -168,7 +170,26 @@ Statement: LLBR Statements RLBR
            Statement {
               fprintf(mipsFile,"Endif%d:\n",ifNum);
            }
-         | WHILE LSBR Expression RSBR Statement
+         | WHILE {
+               whileNum++;
+               fprintf(mipsFile,"While%d:\n",whileNum);
+           } 
+           LSBR Expression {
+              condiFlag = 0;
+              iniExp = 0;
+              if(condiContain == isAnd) {
+                  fprintf(mipsFile,"   and $t1,$t0,$t3\n");
+              }else if(condiContain == isLess ){
+                  fprintf(mipsFile,"   slt $t1,$t0,$t3\n");
+              }else{
+                  fprintf(mipsFile,"   move $t1,$t0\n");
+              }
+              fprintf(mipsFile,"   beqz $t1,EndWhile%d\n",whileNum);
+              fprintf(mipsFile,"   # start while_%d statement\n",whileNum);
+           } RSBR Statement {
+               fprintf(mipsFile,"   j While%d\n",whileNum);
+               fprintf(mipsFile,"EndWhile%d:\n",whileNum);
+           }
          | SYSPRINT LSBR Expression RSBR SEMI {
              int tmp = $3->contain;
              // get expression
