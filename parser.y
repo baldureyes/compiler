@@ -14,6 +14,8 @@
    int condiFlag;
    int ifNum;
    int whileNum;
+   int gloScope;
+   int condiTagSav[10];
    enum{ isLess = 1, isAnd };
    int condiContain;
    struct expAttr *retExpAttr;
@@ -55,6 +57,7 @@ MainClass:
             iniExp = 0;
             condiFlag = 0;
             condiContain = 0;
+            gloScope = 0;
             retExpAttr = (struct expAttr*) malloc(sizeof(struct expAttr));
             retPtype = (struct ptypeAttr*) malloc(sizeof(struct ptypeAttr));
          }
@@ -146,11 +149,13 @@ IdentifierAssign: LMBR Expression RMBR EQ Expression SEMI
 
 Statement: LLBR Statements RLBR
          | IF {
-              ifNum++;
+               ifNum++;
+               condiTagSav[gloScope] = ifNum;
            }
            LSBR Expression {
               condiFlag = 0;
               iniExp = 0;
+              fprintf(mipsFile,"# start if%d_scope%d condition\n",condiTagSav[gloScope],gloScope);
               if(condiContain == isAnd) {
                   fprintf(mipsFile,"   and $t1,$t0,$t3\n");
               }else if(condiContain == isLess ){
@@ -159,20 +164,26 @@ Statement: LLBR Statements RLBR
                   fprintf(mipsFile,"   move $t1,$t0\n");
               }
               // if $t1 == 0, jump to Else
-              fprintf(mipsFile,"   beqz $t1,Else%d\n",ifNum);
-              fprintf(mipsFile,"   # start if_%d statement\n",ifNum);
+              fprintf(mipsFile,"   beqz $t1,Else%d_scope%d\n",condiTagSav[gloScope],gloScope);
            }
-           RSBR Statement ELSE {
-              iniExp = 0;
-              fprintf(mipsFile,"   j Endif%d\n",ifNum);
-              fprintf(mipsFile,"Else%d:\n",ifNum);
+           RSBR {
+               gloScope++;
+           } 
+           Statement {
+               gloScope--;
+           } ELSE {
+               iniExp = 0;
+               fprintf(mipsFile,"   j Endif%d_scope%d\n",condiTagSav[gloScope],gloScope);
+               fprintf(mipsFile,"Else%d_scope%d:\n",condiTagSav[gloScope],gloScope);
+               gloScope++;
            }
            Statement {
-              fprintf(mipsFile,"Endif%d:\n",ifNum);
+               gloScope--;
+               fprintf(mipsFile,"Endif%d_scope%d:\n",condiTagSav[gloScope],gloScope);
            }
          | WHILE {
                whileNum++;
-               fprintf(mipsFile,"While%d:\n",whileNum);
+               fprintf(mipsFile,"While%d_scope%d:\n",whileNum,gloScope);
            } 
            LSBR Expression {
               condiFlag = 0;
@@ -184,11 +195,14 @@ Statement: LLBR Statements RLBR
               }else{
                   fprintf(mipsFile,"   move $t1,$t0\n");
               }
-              fprintf(mipsFile,"   beqz $t1,EndWhile%d\n",whileNum);
-              fprintf(mipsFile,"   # start while_%d statement\n",whileNum);
-           } RSBR Statement {
-               fprintf(mipsFile,"   j While%d\n",whileNum);
-               fprintf(mipsFile,"EndWhile%d:\n",whileNum);
+              fprintf(mipsFile,"   beqz $t1,EndWhile%d_scope%d\n",whileNum,gloScope);
+           } RSBR {
+               gloScope++;
+           }
+           Statement {
+               gloScope--;
+               fprintf(mipsFile,"   j While%d_scope%d\n",whileNum,gloScope);
+               fprintf(mipsFile,"EndWhile%d_scope:\n",whileNum,gloScope);
            }
          | SYSPRINT LSBR Expression RSBR SEMI {
              int tmp = $3->contain;
